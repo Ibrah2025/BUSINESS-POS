@@ -71,85 +71,13 @@ export default function Settings() {
   const [sms, setSms] = useState(false);
   const [notifPhone, setNotifPhone] = useState('');
 
-  // WhatsApp Baileys state
-  const [waStatus, setWaStatus] = useState({ state: 'disconnected', qrCode: null, connected: false, config: null });
-  const [waPhone, setWaPhone] = useState('');
-  const [waLoading, setWaLoading] = useState(false);
-  const [waMsg, setWaMsg] = useState('');
-  const [waMsgType, setWaMsgType] = useState(''); // 'success' | 'error'
-
-  const fetchWaStatus = async () => {
-    try {
-      const { data } = await api.get('/whatsapp/status');
-      setWaStatus(data);
-      if (data.config?.recipient_phone) setWaPhone(data.config.recipient_phone);
-    } catch {}
-  };
-
-  // Poll WhatsApp status on mount
-  useEffect(() => { fetchWaStatus(); }, []);
-
-  const handleWaConnect = async () => {
-    setWaLoading(true);
-    setWaMsg('');
-    try {
-      const { data } = await api.post('/whatsapp/connect');
-      setWaStatus(data);
-      // Poll for QR code / connection
-      const poll = setInterval(async () => {
-        const { data: s } = await api.get('/whatsapp/status');
-        setWaStatus(s);
-        if (s.connected || s.state === 'disconnected') clearInterval(poll);
-      }, 3000);
-      setTimeout(() => clearInterval(poll), 120000); // stop polling after 2 min
-    } catch (err) {
-      setWaMsg(t('connection_failed'));
-      setWaMsgType('error');
-    }
-    setWaLoading(false);
-  };
-
-  const handleWaDisconnect = async () => {
-    setWaLoading(true);
-    try {
-      await api.post('/whatsapp/disconnect');
-      setWaStatus({ state: 'disconnected', qrCode: null, connected: false, config: null });
-      setWaMsg(t('disconnected'));
-      setWaMsgType('success');
-    } catch {}
-    setWaLoading(false);
-  };
-
-  const handleWaSavePhone = async () => {
-    if (!waPhone.trim()) return;
-    setWaLoading(true);
-    setWaMsg('');
-    try {
-      await api.post('/whatsapp/set-recipient', { phone: waPhone.trim() });
-      setWaMsg(t('saved'));
-      setWaMsgType('success');
-      setTimeout(() => setWaMsg(''), 2000);
-    } catch {
-      setWaMsg(t('failed_to_save'));
-      setWaMsgType('error');
-    }
-    setWaLoading(false);
-  };
-
-  const handleWaTest = async () => {
-    setWaLoading(true);
-    setWaMsg('');
-    try {
-      const { data } = await api.post('/whatsapp/test');
-      setWaMsg(data.sent ? (language === 'ha' ? 'An aika sako!' : 'Test message sent!') : (language === 'ha' ? 'Ba a aika ba' : 'Failed to send'));
-      setWaMsgType(data.sent ? 'success' : 'error');
-      setTimeout(() => setWaMsg(''), 3000);
-    } catch {
-      setWaMsg(t('failed'));
-      setWaMsgType('error');
-    }
-    setWaLoading(false);
-  };
+  // Telegram bot link state
+  const [tgBotName, setTgBotName] = useState('');
+  useEffect(() => {
+    api.get('/notifications/telegram-bot').then(({ data }) => {
+      if (data.username) setTgBotName(data.username);
+    }).catch(() => {});
+  }, []);
 
   const [importMsg, setImportMsg] = useState('');
   const [importSuccess, setImportSuccess] = useState(false);
@@ -344,98 +272,50 @@ export default function Settings() {
           />
         </div>
 
-        {/* WhatsApp Notifications */}
-        <SectionTitle>{language === 'ha' ? 'Sanarwar WhatsApp' : 'WhatsApp Notifications'}</SectionTitle>
+        {/* Telegram Notifications */}
+        <SectionTitle>{language === 'ha' ? 'Sanarwar Telegram' : 'Telegram Notifications'}</SectionTitle>
         <div className="rounded-xl bg-[var(--card-bg)] border border-[var(--border-color)] p-4 space-y-3">
-          {/* Connection Status */}
-          <div className="flex items-center gap-2">
-            <span className={`inline-block w-3 h-3 rounded-full ${
-              waStatus.connected ? 'bg-green-500' : waStatus.state === 'qr' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
-            }`} />
-            <span className="text-sm font-medium text-[var(--text-primary)]">
-              {waStatus.connected
-                ? (language === 'ha' ? 'An hada WhatsApp' : 'WhatsApp Connected')
-                : waStatus.state === 'qr'
-                  ? (language === 'ha' ? 'Scan QR code...' : 'Scan QR code...')
-                  : waStatus.state === 'connecting'
-                    ? (language === 'ha' ? 'Ana hadawa...' : 'Connecting...')
-                    : (language === 'ha' ? 'Ba a hada ba' : 'Not Connected')
-              }
-            </span>
+          <p className="text-sm text-[var(--text-primary)]">
+            {language === 'ha'
+              ? 'Karbi sanarwar saye, duba kaya, da sarrafa farashi daga Telegram.'
+              : 'Receive sale alerts, check stock, and manage prices from Telegram.'}
+          </p>
+
+          <div className="bg-[var(--bg-secondary)] rounded-lg p-3 space-y-2">
+            <p className="text-xs font-semibold text-[var(--text-primary)]">
+              {language === 'ha' ? 'Yadda ake hada:' : 'How to connect:'}
+            </p>
+            <ol className="text-xs text-[var(--text-secondary)] space-y-1 list-decimal list-inside">
+              <li>{language === 'ha' ? 'Bude Telegram a wayarka' : 'Open Telegram on your phone'}</li>
+              <li>
+                {language === 'ha' ? 'Nemo bot: ' : 'Search for bot: '}
+                <span className="font-mono text-[var(--text-primary)]">@{tgBotName || 'BizPOS_Bot'}</span>
+              </li>
+              <li>
+                {language === 'ha' ? 'Aika: ' : 'Send: '}
+                <span className="font-mono text-[var(--text-primary)]">/start [waya] [PIN]</span>
+              </li>
+              <li>
+                {language === 'ha' ? 'Misali: ' : 'Example: '}
+                <span className="font-mono text-[var(--text-primary)]">/start 08012345678 1234</span>
+              </li>
+            </ol>
           </div>
 
-          {/* QR Code Display */}
-          {waStatus.state === 'qr' && waStatus.qrCode && (
-            <div className="flex flex-col items-center gap-2 py-2">
-              <img src={waStatus.qrCode} alt="WhatsApp QR" className="w-56 h-56 rounded-lg border border-[var(--border-color)]" />
-              <p className="text-xs text-[var(--text-secondary)] text-center">
-                {language === 'ha'
-                  ? 'Bude WhatsApp > Hadaddun na\'urori > Hada na\'ura'
-                  : 'Open WhatsApp > Linked Devices > Link a Device'}
-              </p>
-            </div>
-          )}
-
-          {/* Connect / Disconnect Button */}
-          {!waStatus.connected ? (
+          {tgBotName && (
             <button
-              onClick={handleWaConnect}
-              disabled={waLoading || waStatus.state === 'qr'}
-              className="w-full px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium disabled:opacity-40"
+              onClick={() => window.open(`https://t.me/${tgBotName}`, '_blank')}
+              className="w-full px-4 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium flex items-center justify-center gap-2"
             >
-              {waLoading ? (language === 'ha' ? 'Ana hadawa...' : 'Connecting...') : (language === 'ha' ? 'Hada WhatsApp' : 'Connect WhatsApp')}
+              {language === 'ha' ? 'Bude Telegram Bot' : 'Open Telegram Bot'}
             </button>
-          ) : (
-            <>
-              {/* Recipient Phone */}
-              <div>
-                <label className="text-xs text-[var(--text-secondary)]">
-                  {language === 'ha' ? 'Lambar waya mai karba' : 'Recipient phone number'}
-                </label>
-                <input
-                  type="tel"
-                  value={waPhone}
-                  onChange={(e) => setWaPhone(e.target.value)}
-                  placeholder="08012345678"
-                  className="w-full mt-1 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[var(--accent)] placeholder:text-[var(--text-secondary)]"
-                />
-                <p className="text-[10px] text-[var(--text-secondary)] mt-1">
-                  {language === 'ha'
-                    ? 'Lambar waya da za a aika sanarwar saye'
-                    : 'Phone number that will receive sale alerts'}
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleWaSavePhone}
-                  disabled={waLoading || !waPhone.trim()}
-                  className="flex-1 px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium disabled:opacity-40"
-                >
-                  {language === 'ha' ? 'Ajiye' : 'Save'}
-                </button>
-                <button
-                  onClick={handleWaTest}
-                  disabled={waLoading}
-                  className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium disabled:opacity-40"
-                >
-                  {language === 'ha' ? 'Gwada' : 'Test'}
-                </button>
-              </div>
-
-              <button
-                onClick={handleWaDisconnect}
-                disabled={waLoading}
-                className="w-full px-4 py-2 rounded-lg bg-red-600/10 text-red-600 text-sm font-medium border border-red-600/20"
-              >
-                {language === 'ha' ? 'Cire WhatsApp' : 'Disconnect WhatsApp'}
-              </button>
-            </>
           )}
 
-          {waMsg && (
-            <p className={`text-sm ${waMsgType === 'success' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>{waMsg}</p>
-          )}
+          <p className="text-[10px] text-[var(--text-secondary)]">
+            {language === 'ha'
+              ? 'Yi amfani da lambar waya da PIN naka na app din nan'
+              : 'Use your phone number and PIN from this app'}
+          </p>
         </div>
 
         {/* ESP32 GSM Module */}

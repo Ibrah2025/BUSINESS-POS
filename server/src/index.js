@@ -107,9 +107,13 @@ io.on('connection', (socket) => {
 server.listen(env.port, () => {
   logger.info(`Server running on port ${env.port} [${env.nodeEnv}]`);
 
-  // Start Telegram bot if token is configured
+  // Start Telegram bot — only in production (Render) to avoid polling conflicts with local dev
   const telegramBot = require('./services/telegram.service');
-  telegramBot.init(process.env.TELEGRAM_BOT_TOKEN);
+  if (env.nodeEnv === 'production') {
+    telegramBot.init(process.env.TELEGRAM_BOT_TOKEN);
+  } else {
+    console.log('ℹ️  Telegram bot skipped in dev mode (set NODE_ENV=production to enable)');
+  }
 
   // WhatsApp (Baileys) — only auto-start in development (cloud IPs are blocked by WhatsApp)
   // On production, WhatsApp connects on-demand when user taps "Connect" in Settings

@@ -38,6 +38,20 @@ router.post('/test', async (req, res, next) => {
   }
 });
 
+// GET /telegram-bot - Get Telegram bot username for linking
+router.get('/telegram-bot', async (req, res) => {
+  try {
+    const TelegramBot = require('node-telegram-bot-api');
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return res.json({ username: null });
+    const bot = new TelegramBot(token);
+    const me = await bot.getMe();
+    res.json({ username: me.username });
+  } catch {
+    res.json({ username: null });
+  }
+});
+
 // GET /log - Get notification log
 router.get('/log', async (req, res, next) => {
   try {
