@@ -45,7 +45,7 @@ async function list(businessId, query = {}) {
   const payments = creditIds.length > 0
     ? await db('credit_payments')
         .whereIn('credit_id', creditIds)
-        .orderBy('created_at', 'desc')
+        .orderBy('paid_at', 'desc')
     : [];
 
   // Group payments by credit_id
@@ -231,7 +231,7 @@ async function recordPayment(businessId, creditId, body) {
     // Fetch all payments for this credit
     const allPayments = await trx('credit_payments')
       .where({ credit_id: creditId })
-      .orderBy('created_at', 'desc');
+      .orderBy('paid_at', 'desc');
 
     return {
       ...mapCredit(updatedCredit),
