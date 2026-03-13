@@ -21,7 +21,9 @@ let sock = null;
 let currentQR = null;       // base64 data-URL of latest QR code
 let connectionState = 'disconnected'; // disconnected | connecting | qr | connected
 let connectRetries = 0;
+let consecutive405 = 0;
 const MAX_RETRIES = 5;
+const MAX_405_RETRIES = 2; // Stop after 2 consecutive 405s (cloud IP blocked)
 
 const fmt = (n) => '\u20A6' + (Number(n) || 0).toLocaleString('en-NG');
 const logger = pino({ level: 'silent' });
@@ -124,13 +126,21 @@ async function connect() {
         connectionState = 'disconnected';
         const statusCode = lastDisconnect?.error?.output?.statusCode;
 
-        if (statusCode === DisconnectReason.loggedOut || statusCode === 405) {
-          // 401 = logged out, 405 = rejected/stale credentials — clear and start fresh
-          console.log(`📱 WhatsApp auth rejected (code ${statusCode}) — clearing auth state`);
+        if (statusCode === DisconnectReason.loggedOut) {
+          console.log('📱 WhatsApp logged out — clearing auth state');
           await db('whatsapp_auth_state').del();
           connectRetries = 0;
-          // Reconnect fresh (will show QR code)
-          setTimeout(() => connect(), 3000);
+          consecutive405 = 0;
+        } else if (statusCode === 405) {
+          consecutive405++;
+          await db('whatsapp_auth_state').del();
+          if (consecutive405 >= MAX_405_RETRIES) {
+            console.log('📱 WhatsApp blocked (code 405) — cloud/datacenter IPs are not supported by WhatsApp. Stopping.');
+            connectionState = 'blocked';
+          } else {
+            console.log(`📱 WhatsApp rejected (code 405) — retry ${consecutive405}/${MAX_405_RETRIES}`);
+            setTimeout(() => connect(), 5000);
+          }
         } else if (connectRetries < MAX_RETRIES) {
           connectRetries++;
           console.log(`📱 WhatsApp disconnected (code ${statusCode}) — retry ${connectRetries}/${MAX_RETRIES}`);
@@ -144,6 +154,7 @@ async function connect() {
         currentQR = null;
         connectionState = 'connected';
         connectRetries = 0;
+        consecutive405 = 0;
         console.log('📱 WhatsApp connected successfully');
       }
     });
@@ -302,6 +313,10 @@ function getStatus() {
     state: connectionState,
     qrCode: currentQR, // base64 data URL or null
     connected: connectionState === 'connected',
+    blocked: connectionState === 'blocked',
+    message: connectionState === 'blocked'
+      ? 'WhatsApp blocks connections from cloud servers. This feature only works when the server runs locally (e.g. on shop WiFi).'
+      : null,
   };
 }
 
@@ -318,6 +333,7 @@ function init(enabled) {
 
 function resetRetries() {
   connectRetries = 0;
+  consecutive405 = 0;
 }
 
 module.exports = {

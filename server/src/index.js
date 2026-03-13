@@ -11,6 +11,7 @@ const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
+app.set('trust proxy', 1); // Render uses a reverse proxy
 const server = http.createServer(app);
 
 // WebSocket
@@ -110,9 +111,14 @@ server.listen(env.port, () => {
   const telegramBot = require('./services/telegram.service');
   telegramBot.init(process.env.TELEGRAM_BOT_TOKEN);
 
-  // Start WhatsApp (Baileys) if enabled
+  // WhatsApp (Baileys) — only auto-start in development (cloud IPs are blocked by WhatsApp)
+  // On production, WhatsApp connects on-demand when user taps "Connect" in Settings
   const whatsappService = require('./services/whatsapp.service');
-  whatsappService.init(process.env.WHATSAPP_ENABLED === 'true');
+  if (env.nodeEnv !== 'production' && process.env.WHATSAPP_ENABLED === 'true') {
+    whatsappService.init(true);
+  } else {
+    console.log('📱 WhatsApp available on-demand (connect from app Settings)');
+  }
 });
 
 module.exports = { app, server, io };
