@@ -73,6 +73,8 @@ app.use('/api/export', require('./routes/export.routes'));
 app.use('/api/sync', require('./routes/sync.routes'));
 app.use('/api/actions', require('./routes/actions.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/subscription', require('./routes/subscription.routes'));
+app.use('/api/whatsapp', require('./routes/whatsapp.routes'));
 
 // Error handler
 app.use(errorHandler);
@@ -97,6 +99,10 @@ server.listen(env.port, () => {
   // Start Telegram bot if token is configured
   const telegramBot = require('./services/telegram.service');
   telegramBot.init(process.env.TELEGRAM_BOT_TOKEN);
+
+  // Start WhatsApp (Baileys) if enabled
+  const whatsappService = require('./services/whatsapp.service');
+  whatsappService.init(process.env.WHATSAPP_ENABLED === 'true');
 });
 
 module.exports = { app, server, io };

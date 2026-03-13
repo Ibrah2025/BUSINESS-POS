@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const salesService = require('../services/sales.service');
 const { broadcastSale } = require('../websocket/liveTransactions');
 const { notifySale } = require('../services/telegram.service');
+const { notifySale: notifyWhatsApp } = require('../services/whatsapp.service');
 
 router.use(authenticate);
 
@@ -34,6 +35,7 @@ router.post('/', async (req, res, next) => {
     const io = req.app.get('io');
     if (io) broadcastSale(io, req.user.businessId, result);
     notifySale(req.user.businessId, result);
+    notifyWhatsApp(req.user.businessId, result);
     res.status(201).json(result);
   } catch (err) {
     next(err);

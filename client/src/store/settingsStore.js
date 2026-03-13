@@ -1,11 +1,24 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Default to Hausa for Nigerian market; English only if phone is clearly non-Hausa
+function detectDefaultLanguage() {
+  try {
+    const nav = navigator.language || navigator.userLanguage || '';
+    // If phone is set to English with non-Nigerian locale, use English
+    if (nav.startsWith('en') && !nav.includes('NG')) return 'en';
+    // Everything else (including ha, ha-NG, en-NG, yo, ig) defaults to Hausa
+    return 'ha';
+  } catch {
+    return 'ha';
+  }
+}
+
 export const useSettingsStore = create(
   persist(
     (set) => ({
       theme: 'premium', // 'premium' | 'dark' | 'bright' | 'neutral' | 'vivid'
-      language: 'en', // 'en' | 'ha'
+      language: detectDefaultLanguage(), // 'en' | 'ha'
       soundEnabled: true,
       hapticEnabled: true,
       dataSaverMode: false,

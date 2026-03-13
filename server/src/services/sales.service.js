@@ -148,11 +148,18 @@ async function create(businessId, attendantId, body) {
           : 0;
         const newBalance = currentBalance + parseFloat(payment.amount);
 
+        // Build description with item names for cash register display
+        const itemNames = items.map((i) => {
+          const name = i.productName || i.name || '?';
+          const qty = parseInt(i.quantity) || 1;
+          return qty > 1 ? `${name} x${qty}` : name;
+        }).join(', ');
+
         await trx('cash_transactions').insert({
           business_id: businessId,
           type: 'sale',
           amount: parseFloat(payment.amount),
-          description: `Sale #${saleRecord.id.slice(0, 8)}`,
+          description: itemNames || `Sale #${saleRecord.id.slice(0, 8)}`,
           balance_after: newBalance,
         });
       }
@@ -165,13 +172,19 @@ async function create(businessId, attendantId, body) {
           .increment('usage_count', 1)
           .update({ updated_at: trx.fn.now() });
 
+        const bankItemNames = items.map((i) => {
+          const name = i.productName || i.name || '?';
+          const qty = parseInt(i.quantity) || 1;
+          return qty > 1 ? `${name} x${qty}` : name;
+        }).join(', ');
+
         await trx('bank_transactions').insert({
           bank_account_id: payment.bankAccountId,
           business_id: businessId,
           type: 'sale',
           amount: parseFloat(payment.amount),
           reference_id: saleRecord.id,
-          description: `Sale #${saleRecord.id.slice(0, 8)}`,
+          description: bankItemNames || `Sale #${saleRecord.id.slice(0, 8)}`,
         });
       }
 

@@ -450,14 +450,34 @@ async function notifySale(businessId, saleData) {
       credit: lang === 'ha' ? '📋 Bashi' : '📋 Credit',
     }[method] || method;
 
+    // Format time and date
+    const saleTime = new Date(saleData.created_at || Date.now());
+    const timeStr = saleTime.toLocaleString('en-NG', {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+
+    // Get attendant name if available
+    let attendantLine = '';
+    if (saleData.attendant_id) {
+      try {
+        const attendant = await db('users').where({ id: saleData.attendant_id }).select('name').first();
+        if (attendant?.name) {
+          attendantLine = `\n👤  ${lang === 'ha' ? 'Mai sayarwa' : 'Sold by'}:  ${attendant.name}`;
+        }
+      } catch {}
+    }
+
     const text =
       `🛒 <b>${lang === 'ha' ? 'Sabon Saye!' : 'New Sale!'}</b>\n` +
+      `🕐  ${timeStr}\n` +
       `━━━━━━━━━━━━━━━━━\n` +
       `${items}\n` +
       `━━━━━━━━━━━━━━━━━\n` +
       `💵  ${lang === 'ha' ? 'Jimla' : 'Total'}:  <b>${fmt(saleData.total_amount || saleData.totalAmount)}</b>\n` +
       `📈  ${lang === 'ha' ? 'Riba' : 'Profit'}:  <b>${fmt(saleData.profit)}</b>\n` +
-      `💳  ${methodLabel}`;
+      `💳  ${methodLabel}` +
+      attendantLine;
 
     for (const link of links) {
       bot.sendMessage(link.chat_id, text, { parse_mode: 'HTML' }).catch(() => {});

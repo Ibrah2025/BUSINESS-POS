@@ -73,6 +73,22 @@ const ACTION_TYPES = [
   'cash_transaction', 'return'
 ];
 
+const PLAN_TYPES = {
+  FREE: 'free',
+  PREMIUM: 'premium'
+};
+
+const FREE_TIER_LIMITS = {
+  maxStaff: 1,        // owner only
+  maxProducts: 20,
+  reportsAccess: false,
+  exportAccess: false,
+  creditTracking: false,
+  cashReconciliation: false,
+  multipleAccounts: false,
+  alertsAccess: false,
+};
+
 const MAX_ACTION_HISTORY = 50;
 const DEFAULT_LOW_STOCK_THRESHOLD = 10;
 const DEFAULT_PAGE_SIZE = 20;
@@ -90,6 +106,8 @@ module.exports = {
   CASH_TRANSACTION_TYPES,
   NOTIFICATION_CHANNELS,
   ACTION_TYPES,
+  PLAN_TYPES,
+  FREE_TIER_LIMITS,
   MAX_ACTION_HISTORY,
   DEFAULT_LOW_STOCK_THRESHOLD,
   DEFAULT_PAGE_SIZE,
