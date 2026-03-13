@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+coverage/
+
+# Android build artifacts
+client/android/.gradle/
+client/android/app/build/
+client/android/build/
+client/android/capacitor-cordova-android-plugins/build/
+*.apk
+*.aab
+local.properties

@@ -1,0 +1,15 @@
+{
+  "appId": "com.bizpos.app",
+  "appName": "BizPOS",
+  "webDir": "dist",
+  "server": {
+    "url": "http://192.168.1.104:5173",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#059669"
+    }
+  }
+}

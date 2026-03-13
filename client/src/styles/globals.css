@@ -1,0 +1,131 @@
+@import './themes.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  min-height: 100dvh;
+  overscroll-behavior-y: contain; /* Prevent pull-to-refresh / overscroll bounce */
+  -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS */
+}
+
+/* ── Smooth scrollable containers ────────────────────────────── */
+.overflow-y-auto,
+.overflow-y-scroll,
+[class*="overflow-y-"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ── Touch-friendly active states ────────────────────────────── */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* Remove 300ms tap delay */
+}
+
+/* Press feedback for all interactive elements */
+button:active:not(:disabled),
+a:active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* ── GPU-accelerated transitions ─────────────────────────────── */
+.transition-transform,
+.transition-all,
+.transition-colors {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ── Hide scrollbars but keep scrolling (cleaner mobile look) ─ */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Safe area insets for notch/nav bar phones ───────────────── */
+#root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* ── Offline banner ──────────────────────────────────────────── */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  padding: 6px 16px;
+  background-color: #ef4444;
+  color: #ffffff;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.offline-banner ~ #root {
+  padding-top: 32px;
+}
+
+/* ── Input focus ring consistency ─────────────────────────────── */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+}
+
+/* ── Prevent text selection on UI elements (not inputs) ──────── */
+nav, header, button, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Toast / badge animations ────────────────────────────────── */
+@keyframes scaleIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+/* ── Profit toast animation ─────────────────────────────────── */
+@keyframes profitPop {
+  0%   { transform: scale(0.3) translateY(40px); opacity: 0; }
+  15%  { transform: scale(1.1) translateY(0);    opacity: 1; }
+  25%  { transform: scale(0.95) translateY(0);   opacity: 1; }
+  35%  { transform: scale(1) translateY(0);      opacity: 1; }
+  75%  { transform: scale(1) translateY(0);      opacity: 1; }
+  100% { transform: scale(0.9) translateY(-30px); opacity: 0; }
+}
+@keyframes profitGlow {
+  0%   { transform: scale(0.5); opacity: 0; }
+  30%  { transform: scale(1.6); opacity: 0.6; }
+  100% { transform: scale(2);   opacity: 0; }
+}

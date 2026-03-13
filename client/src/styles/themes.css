@@ -1,0 +1,111 @@
+/* Default fallback (no theme set) */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --input-bg: #f9fafb;
+}
+
+/* Classic - Clean black & white */
+[data-theme="classic"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --input-bg: #f9fafb;
+}
+
+/* Premium - Dark green/gold professional */
+[data-theme="premium"] {
+  --bg-primary: #0f1a12;
+  --bg-secondary: #1a2e1f;
+  --text-primary: #e8e4d9;
+  --text-secondary: #a8a08e;
+  --accent: #c9a84c;
+  --accent-hover: #d4b85e;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #1e3524;
+  --border-color: #2d4a35;
+  --input-bg: #162b1c;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-primary: #111111;
+  --bg-secondary: #1a1a1a;
+  --text-primary: #f0f0f0;
+  --text-secondary: #9ca3af;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #1f1f1f;
+  --border-color: #2e2e2e;
+  --input-bg: #181818;
+}
+
+/* Bright - Light vibrant */
+[data-theme="bright"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0fdf4;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --accent: #16a34a;
+  --accent-hover: #15803d;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+  --input-bg: #f9fafb;
+}
+
+/* Neutral - Gray/minimal */
+[data-theme="neutral"] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #e5e5e5;
+  --text-primary: #262626;
+  --text-secondary: #737373;
+  --accent: #525252;
+  --accent-hover: #404040;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #ffffff;
+  --border-color: #d4d4d4;
+  --input-bg: #fafafa;
+}
+
+/* Vivid - Colorful/energetic */
+[data-theme="vivid"] {
+  --bg-primary: #fefce8;
+  --bg-secondary: #fef9c3;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --card-bg: #fffbeb;
+  --border-color: #fde68a;
+  --input-bg: #fffef5;
+}
