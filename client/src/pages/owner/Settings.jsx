@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -86,8 +86,8 @@ export default function Settings() {
     } catch {}
   };
 
-  // Poll WhatsApp status on mount and when QR is showing
-  useState(() => { fetchWaStatus(); });
+  // Poll WhatsApp status on mount
+  useEffect(() => { fetchWaStatus(); }, []);
 
   const handleWaConnect = async () => {
     setWaLoading(true);

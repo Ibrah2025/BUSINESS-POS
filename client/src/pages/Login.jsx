@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { useTranslation } from '../i18n';
 
 const SAVED_PHONE_KEY = 'bizpos_saved_phone';
@@ -10,7 +11,8 @@ export default function Login() {
   const [pin, setPin] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const { loginWithCredentials, loading, isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
@@ -61,6 +63,14 @@ export default function Login() {
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--bg-primary)] px-4">
+      {/* Language toggle — top right */}
+      <button
+        onClick={() => setLanguage(language === 'ha' ? 'en' : 'ha')}
+        className="fixed top-4 right-4 px-3 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-secondary)] active:bg-[var(--border-color)] z-10"
+      >
+        {language === 'ha' ? 'English' : 'Hausa'}
+      </button>
+
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-center text-[var(--text-primary)] mb-1">
           {t('app_name')}

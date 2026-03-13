@@ -71,16 +71,16 @@ export default function Onboarding() {
 
         <div className="w-full max-w-xs space-y-4">
           <button
-            onClick={() => pickLanguage('en')}
-            className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 transition-colors"
-          >
-            English
-          </button>
-          <button
             onClick={() => pickLanguage('ha')}
-            className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 transition-colors"
+            className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-lg active:bg-green-700 transition-colors"
           >
             Hausa
+          </button>
+          <button
+            onClick={() => pickLanguage('en')}
+            className="w-full py-4 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] font-bold text-lg border border-[var(--border-color)] active:bg-[var(--border-color)] transition-colors"
+          >
+            English
           </button>
         </div>
       </div>
