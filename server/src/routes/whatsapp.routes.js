@@ -19,11 +19,12 @@ router.get('/status', async (req, res, next) => {
 // POST /connect — start WhatsApp connection (generates QR)
 router.post('/connect', async (req, res, next) => {
   try {
+    whatsappService.resetRetries();
     await whatsappService.connect();
     // Give it a moment for QR to generate
     setTimeout(() => {
       res.json(whatsappService.getStatus());
-    }, 2000);
+    }, 3000);
   } catch (err) {
     next(err);
   }

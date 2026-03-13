@@ -20,6 +20,8 @@ const pino = require('pino');
 let sock = null;
 let currentQR = null;       // base64 data-URL of latest QR code
 let connectionState = 'disconnected'; // disconnected | connecting | qr | connected
+let connectRetries = 0;
+const MAX_RETRIES = 5;
 
 const fmt = (n) => '\u20A6' + (Number(n) || 0).toLocaleString('en-NG');
 const logger = pino({ level: 'silent' });
@@ -87,6 +89,7 @@ async function useDBAuthState() {
 async function connect() {
   if (sock) return;
   connectionState = 'connecting';
+  console.log('📱 WhatsApp connecting... (attempt ' + (connectRetries + 1) + ')');
 
   try {
     const { state, saveCreds } = await useDBAuthState();
@@ -96,7 +99,6 @@ async function connect() {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
       },
-      printQRInTerminal: true, // Also print in server logs for Render
       logger,
       browser: ['BizPOS', 'Chrome', '4.0.0'],
       connectTimeoutMs: 60000,
@@ -121,23 +123,27 @@ async function connect() {
         currentQR = null;
         connectionState = 'disconnected';
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-        if (statusCode === DisconnectReason.loggedOut) {
-          console.log('📱 WhatsApp logged out — clearing auth state');
+        if (statusCode === DisconnectReason.loggedOut || statusCode === 405) {
+          // 401 = logged out, 405 = rejected/stale credentials — clear and start fresh
+          console.log(`📱 WhatsApp auth rejected (code ${statusCode}) — clearing auth state`);
           await db('whatsapp_auth_state').del();
-        } else {
-          console.log(`📱 WhatsApp disconnected (code ${statusCode}) — reconnecting...`);
-        }
-
-        if (shouldReconnect) {
+          connectRetries = 0;
+          // Reconnect fresh (will show QR code)
+          setTimeout(() => connect(), 3000);
+        } else if (connectRetries < MAX_RETRIES) {
+          connectRetries++;
+          console.log(`📱 WhatsApp disconnected (code ${statusCode}) — retry ${connectRetries}/${MAX_RETRIES}`);
           setTimeout(() => connect(), 5000);
+        } else {
+          console.log(`📱 WhatsApp gave up after ${MAX_RETRIES} retries (last code ${statusCode})`);
         }
       }
 
       if (connection === 'open') {
         currentQR = null;
         connectionState = 'connected';
+        connectRetries = 0;
         console.log('📱 WhatsApp connected successfully');
       }
     });
@@ -310,6 +316,10 @@ function init(enabled) {
   connect();
 }
 
+function resetRetries() {
+  connectRetries = 0;
+}
+
 module.exports = {
   init,
   connect,
@@ -319,4 +329,5 @@ module.exports = {
   setConfig,
   getConfig,
   getStatus,
+  resetRetries,
 };
