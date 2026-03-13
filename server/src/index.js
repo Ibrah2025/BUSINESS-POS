@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -75,6 +76,15 @@ app.use('/api/actions', require('./routes/actions.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/subscription', require('./routes/subscription.routes'));
 app.use('/api/whatsapp', require('./routes/whatsapp.routes'));
+
+// Serve React client (built by Vite) in production
+const clientDist = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+app.get('*', (req, res, next) => {
+  // Let API 404s pass to error handler, serve index.html for everything else (SPA)
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 // Error handler
 app.use(errorHandler);
