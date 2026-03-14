@@ -284,6 +284,7 @@ export default function ScanSell() {
   };
 
   const manualInputRef = useRef(null);
+  const [kbOpen, setKbOpen] = useState(false);
   const toastTimer = useRef(null);
 
   // Computed cart total
@@ -383,7 +384,9 @@ export default function ScanSell() {
       } finally {
         setLookupLoading(false);
         setManualCode('');
-        setTimeout(() => manualInputRef.current?.focus(), 50);
+        setKbOpen(false);
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+        try { if (window.Capacitor?.isNativePlatform?.()) import('@capacitor/keyboard').then(m => m.Keyboard.hide()).catch(() => {}); } catch {}
       }
     },
     [addToCart, playError, showToast]
@@ -406,10 +409,7 @@ export default function ScanSell() {
   // Merge refs — barcode hook's inputRef is for HID; we also keep manualInputRef
   // We use manualInputRef for the visible text input
 
-  // Auto-focus hidden HID input on mount (no keyboard popup)
-  useEffect(() => {
-    barcodeInputRef.current?.focus();
-  }, []);
+  // HID barcode scanner works at window level — no input focus needed
 
   // Load top products for quick-add
   useEffect(() => {
@@ -634,7 +634,9 @@ export default function ScanSell() {
       showToast(msg, 'error');
     } finally {
       setSaleLoading(false);
-      setTimeout(() => manualInputRef.current?.focus(), 100);
+      setKbOpen(false);
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      try { if (window.Capacitor?.isNativePlatform?.()) import('@capacitor/keyboard').then(m => m.Keyboard.hide()).catch(() => {}); } catch {}
     }
   }, [
     cart,
@@ -743,10 +745,12 @@ export default function ScanSell() {
             ref={manualInputRef}
             type="text"
             inputMode="numeric"
+            readOnly={!kbOpen}
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
+            onClick={() => { if (!kbOpen) { setKbOpen(true); setTimeout(() => manualInputRef.current?.focus(), 30); } }}
             placeholder={t('type_or_scan')}
-            className="w-full h-11 pl-3 pr-16 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            className={`w-full h-11 pl-3 pr-16 rounded-lg border bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${kbOpen ? 'border-[var(--accent)]' : 'border-[var(--border)]'}`}
           />
           <button
             type="submit"
@@ -772,16 +776,14 @@ export default function ScanSell() {
         )}
       </section>
 
-      {/* ── Floating SCAN FAB — thumb-friendly, avoids overlap ── */}
-      {!isCameraOpen && !completedSale && (
+      {/* ── Floating SCAN FAB — bottom-right, hidden when cart has items ── */}
+      {!isCameraOpen && !completedSale && cart.length === 0 && (
         <button
           onClick={openCamera}
           className="fixed z-40 w-14 h-14 rounded-full bg-[var(--accent)] text-white shadow-xl flex items-center justify-center active:scale-90 transition-transform"
           style={{
-            left: 16,
-            bottom: cart.length > 0
-              ? 'calc(64px + env(safe-area-inset-bottom, 0px) + 190px)'
-              : 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)',
+            right: 16,
+            bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)',
           }}
           aria-label={t('scan')}
         >
@@ -1086,7 +1088,7 @@ export default function ScanSell() {
           businessName={businessName}
           businessType=""
           currency={currency}
-          onClose={() => setCompletedSale(null)}
+          onClose={() => { setCompletedSale(null); setKbOpen(false); }}
           onPrint={() => window.print()}
         />
       )}

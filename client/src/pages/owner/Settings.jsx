@@ -73,11 +73,49 @@ export default function Settings() {
 
   // Telegram bot link state
   const [tgBotName, setTgBotName] = useState('');
+  const [tgLinks, setTgLinks] = useState([]);
+  const [tgInviteLink, setTgInviteLink] = useState('');
+  const [tgLoading, setTgLoading] = useState(false);
+
   useEffect(() => {
     api.get('/notifications/telegram-bot').then(({ data }) => {
       if (data.username) setTgBotName(data.username);
     }).catch(() => {});
+    // Load linked Telegram accounts
+    api.get('/notifications/telegram-links').then(({ data }) => {
+      setTgLinks(data.links || []);
+    }).catch(() => {});
   }, []);
+
+  const generateTgInvite = async () => {
+    setTgLoading(true);
+    try {
+      const { data } = await api.post('/notifications/telegram-invite');
+      if (data.link) {
+        setTgInviteLink(data.link);
+        // Try sharing
+        if (navigator.share) {
+          await navigator.share({
+            title: 'BizPOS Telegram',
+            text: language === 'ha'
+              ? 'Danna wannan hanyar haɗin yanar gizo don karɓar sanarwar saye ta Telegram:'
+              : 'Tap this link to receive sale notifications via Telegram:',
+            url: data.link,
+          }).catch(() => {});
+        }
+      }
+    } catch {
+      setTgInviteLink('');
+    }
+    setTgLoading(false);
+  };
+
+  const removeTgLink = async (chatId) => {
+    try {
+      await api.delete(`/notifications/telegram-links/${chatId}`);
+      setTgLinks((prev) => prev.filter((l) => l.chat_id !== chatId));
+    } catch {}
+  };
 
   const [importMsg, setImportMsg] = useState('');
   const [importSuccess, setImportSuccess] = useState(false);
@@ -281,41 +319,106 @@ export default function Settings() {
               : 'Receive sale alerts, check stock, and manage prices from Telegram.'}
           </p>
 
-          <div className="bg-[var(--bg-secondary)] rounded-lg p-3 space-y-2">
-            <p className="text-xs font-semibold text-[var(--text-primary)]">
-              {language === 'ha' ? 'Yadda ake hada:' : 'How to connect:'}
-            </p>
-            <ol className="text-xs text-[var(--text-secondary)] space-y-1 list-decimal list-inside">
-              <li>{language === 'ha' ? 'Bude Telegram a wayarka' : 'Open Telegram on your phone'}</li>
-              <li>
-                {language === 'ha' ? 'Nemo bot: ' : 'Search for bot: '}
-                <span className="font-mono text-[var(--text-primary)]">@{tgBotName || 'BizPOS_Bot'}</span>
-              </li>
-              <li>
-                {language === 'ha' ? 'Aika: ' : 'Send: '}
-                <span className="font-mono text-[var(--text-primary)]">/start [waya] [PIN]</span>
-              </li>
-              <li>
-                {language === 'ha' ? 'Misali: ' : 'Example: '}
-                <span className="font-mono text-[var(--text-primary)]">/start 08012345678 1234</span>
-              </li>
-            </ol>
-          </div>
-
-          {tgBotName && (
-            <button
-              onClick={() => window.open(`https://t.me/${tgBotName}`, '_blank')}
-              className="w-full px-4 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium flex items-center justify-center gap-2"
-            >
-              {language === 'ha' ? 'Bude Telegram Bot' : 'Open Telegram Bot'}
-            </button>
+          {/* ── Linked Telegram Accounts ── */}
+          {tgLinks.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-[var(--text-primary)]">
+                {language === 'ha' ? 'Asusun da aka hada:' : 'Linked accounts:'}
+              </p>
+              {tgLinks.map((link) => (
+                <div key={link.chat_id} className="flex items-center justify-between bg-[var(--bg-secondary)] rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base">&#128172;</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{link.user_name || 'Telegram User'}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)]">ID: {link.chat_id}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeTgLink(link.chat_id)}
+                    className="shrink-0 text-xs text-red-500 font-medium px-2 py-1 rounded active:bg-red-500/10"
+                  >
+                    {language === 'ha' ? 'Cire' : 'Remove'}
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
 
-          <p className="text-[10px] text-[var(--text-secondary)]">
-            {language === 'ha'
-              ? 'Yi amfani da lambar waya da PIN naka na app din nan'
-              : 'Use your phone number and PIN from this app'}
-          </p>
+          {tgLinks.length === 0 && (
+            <div className="bg-[var(--bg-secondary)] rounded-lg p-3 text-center">
+              <p className="text-xs text-[var(--text-secondary)]">
+                {language === 'ha' ? 'Babu wanda aka hada tukuna' : 'No Telegram accounts linked yet'}
+              </p>
+            </div>
+          )}
+
+          {/* ── Add New: Two Options ── */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-[var(--text-primary)]">
+              {language === 'ha' ? 'Hada sabon mutum:' : 'Add new person:'}
+            </p>
+
+            {/* Option 1: Open bot yourself */}
+            {tgBotName && (
+              <button
+                onClick={() => window.open(`https://t.me/${tgBotName}`, '_blank')}
+                className="w-full px-4 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <span>&#9993;</span>
+                {language === 'ha' ? 'Bude Telegram Bot (Kanka)' : 'Open Telegram Bot (Yourself)'}
+              </button>
+            )}
+
+            {/* Option 2: Send invite link to someone else */}
+            <button
+              onClick={generateTgInvite}
+              disabled={tgLoading}
+              className="w-full px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <span>&#128279;</span>
+              {tgLoading
+                ? '...'
+                : language === 'ha'
+                  ? 'Aika Hanyar Gayyata (Wani Mutum)'
+                  : 'Send Invite Link (Someone Else)'}
+            </button>
+
+            {/* Show generated link for manual copy */}
+            {tgInviteLink && (
+              <div className="bg-[var(--bg-secondary)] rounded-lg p-2.5 space-y-1.5">
+                <p className="text-[10px] font-semibold text-[var(--text-primary)]">
+                  {language === 'ha' ? 'Hanyar gayyata (24 awa):' : 'Invite link (valid 24h):'}
+                </p>
+                <div
+                  onClick={() => { navigator.clipboard?.writeText(tgInviteLink); }}
+                  className="text-[11px] text-blue-400 font-mono break-all cursor-pointer active:opacity-50"
+                >
+                  {tgInviteLink}
+                </div>
+                <p className="text-[9px] text-[var(--text-secondary)]">
+                  {language === 'ha' ? 'Danna don kwafa' : 'Tap to copy'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Manual instructions ── */}
+          <details className="text-xs">
+            <summary className="text-[var(--text-secondary)] cursor-pointer">
+              {language === 'ha' ? 'Ko kuma hada da hannu...' : 'Or link manually...'}
+            </summary>
+            <div className="bg-[var(--bg-secondary)] rounded-lg p-3 mt-1.5 space-y-1">
+              <p className="text-[var(--text-secondary)]">
+                {language === 'ha' ? 'Aika wannan zuwa bot din: ' : 'Send this to the bot: '}
+                <span className="font-mono text-[var(--text-primary)]">/start [phone] [PIN]</span>
+              </p>
+              <p className="text-[var(--text-secondary)]">
+                {language === 'ha' ? 'Misali: ' : 'Example: '}
+                <span className="font-mono text-[var(--text-primary)]">/start 08012345678 1234</span>
+              </p>
+            </div>
+          </details>
         </div>
 
         {/* ESP32 GSM Module */}

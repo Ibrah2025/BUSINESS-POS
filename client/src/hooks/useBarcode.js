@@ -41,7 +41,6 @@ export function useBarcode({ onScan } = {}) {
         bufferRef.current = '';
         setIsScanning(false);
         handleScan(code);
-        setTimeout(() => inputRef.current?.focus(), 50);
         return;
       }
 

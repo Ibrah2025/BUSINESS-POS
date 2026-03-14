@@ -306,15 +306,37 @@ async function handleMessage(msg) {
   if (!text) return;
   const lower = text.toLowerCase();
 
-  // /start <phone> <pin>
+  // /start <phone> <pin>  OR  /start <invite_code>
   if (lower.startsWith('/start')) {
     const parts = text.split(/\s+/);
-    const phone = parts[1];
-    const pin = parts[2];
-    if (!phone || !pin) {
+    const arg1 = parts[1];
+    const arg2 = parts[2];
+
+    // No arguments — show welcome
+    if (!arg1) {
       return send(chatId, T.en.welcome);
     }
+
     try {
+      // Check if arg1 is an invite code (no second argument, or doesn't look like a phone number)
+      if (!arg2 && arg1.length > 15) {
+        const inviteBusinessId = validateInvite(arg1);
+        if (inviteBusinessId) {
+          const biz = await db('businesses').where({ id: inviteBusinessId }).first();
+          if (biz) {
+            await linkChat(chatId, inviteBusinessId, msg.from?.first_name);
+            const lang = await getLang(inviteBusinessId);
+            const l = t(lang);
+            return send(chatId, l.linked(biz.name || 'Your Business'), mainMenu(lang));
+          }
+        }
+      }
+
+      // Standard phone + PIN flow
+      const phone = arg1;
+      const pin = arg2;
+      if (!pin) return send(chatId, T.en.welcome);
+
       const bcrypt = require('bcrypt');
       const user = await db('users').where({ phone, is_active: true }).first();
       if (!user) return send(chatId, T.en.invalid_cred);
@@ -532,4 +554,43 @@ function init(token) {
   console.log('🤖 Telegram bot started (polling mode)');
 }
 
-module.exports = { init, notifySale };
+// ─── Invite Code System ────────────────────────────────────────────────────
+// Simple invite: base64(businessId:timestamp:hash)
+
+const crypto = require('crypto');
+const INVITE_SECRET = process.env.TELEGRAM_BOT_TOKEN || 'bizpos-fallback';
+const INVITE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+function generateInvite(businessId) {
+  const ts = Date.now();
+  const hmac = crypto.createHmac('sha256', INVITE_SECRET)
+    .update(`${businessId}:${ts}`)
+    .digest('hex')
+    .slice(0, 12);
+  return Buffer.from(`${businessId}:${ts}:${hmac}`).toString('base64url');
+}
+
+function validateInvite(code) {
+  try {
+    const decoded = Buffer.from(code, 'base64url').toString();
+    const [businessId, tsStr, hash] = decoded.split(':');
+    const ts = parseInt(tsStr, 10);
+    if (Date.now() - ts > INVITE_EXPIRY) return null; // expired
+    const expected = crypto.createHmac('sha256', INVITE_SECRET)
+      .update(`${businessId}:${ts}`)
+      .digest('hex')
+      .slice(0, 12);
+    if (hash !== expected) return null; // tampered
+    return businessId;
+  } catch { return null; }
+}
+
+async function getLinkedChats(businessId) {
+  return db('telegram_links').where({ business_id: businessId }).select('chat_id', 'user_name', 'created_at');
+}
+
+async function unlinkChat(chatId) {
+  return db('telegram_links').where({ chat_id: String(chatId) }).del();
+}
+
+module.exports = { init, notifySale, generateInvite, validateInvite, getLinkedChats, unlinkChat, linkChat };
